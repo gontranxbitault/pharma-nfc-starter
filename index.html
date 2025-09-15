@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="fr">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rappels traitement – Démo</title>
+<style>
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 2rem; line-height: 1.4; }
+  .card { border: 1px solid #ddd; border-radius: 12px; padding: 1rem 1.2rem; margin-bottom: 1rem; }
+  .btn { display: inline-block; padding: .7rem 1rem; border-radius: 10px; border: 1px solid #222; text-decoration: none; }
+  .btn + .btn { margin-left: .6rem; }
+  small { color:#666; }
+</style>
+<h1>Ajouter un rappel de traitement</h1>
+<p>Sélectionnez une option :</p>
+
+<div class="card">
+  <h2>Quotidien</h2>
+  <a class="btn" href="/ics/quotidien.ics">Ajouter (Apple/Outlook)</a>
+  <a class="btn" href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=Rappel%20:%20traitement&dates=20250916T080000/20250916T081000&recur=RRULE:FREQ=DAILY">Ajouter (Google Calendar)</a>
+  <p><small>Titre neutre : « Rappel : traitement »</small></p>
+</div>
+
+<div class="card">
+  <h2>Biquotidien (matin/soir)</h2>
+  <a class="btn" href="/ics/biquotidien.ics">Ajouter (Apple/Outlook)</a>
+  <a class="btn" href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=Rappel%20:%20traitement&details=Rappel%20matin%20et%20soir&recur=RRULE:FREQ=DAILY">Ajouter (Google Calendar)</a>
+  <p><small>Modifiez les heures après ajout.</small></p>
+</div>
+
+<div class="card">
+  <h2>Renouvellement mensuel</h2>
+  <a class="btn" href="/ics/renouvellement.ics">Ajouter (Apple/Outlook)</a>
+  <a class="btn" href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=Renouveler%20l%E2%80%99ordonnance&dates=20251016T090000/20251016T091000&recur=RRULE:FREQ=MONTHLY">Ajouter (Google Calendar)</a>
+  <p><small>Alerte la veille (dans le fichier .ics).</small></p>
+</div>
+
+<p><small>Démo pédagogique. Ne contient aucune donnée personnelle.</small></p>
+</html>
