@@ -1,38 +1,245 @@
 <!doctype html>
-<html lang="fr">
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rappels traitement – Démo</title>
-<style>
-  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 2rem; line-height: 1.4; }
-  .card { border: 1px solid #ddd; border-radius: 12px; padding: 1rem 1.2rem; margin-bottom: 1rem; }
-  .btn { display: inline-block; padding: .7rem 1rem; border-radius: 10px; border: 1px solid #222; text-decoration: none; }
-  .btn + .btn { margin-left: .6rem; }
-  small { color:#666; }
-</style>
-<h1>Ajouter un rappel de traitement</h1>
-<p>Sélectionnez une option :</p>
+<html lang="fr" class="h-full">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <title>Rappels de traitement • Ajout rapide</title>
+  <meta name="description" content="Ajoutez un rappel neutre de prise ou de renouvellement en un tap." />
+  <link rel="preload" href="/ics/quotidien.ics" as="fetch" crossorigin>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #11172b;
+      --muted: #97a0b8;
+      --fg: #eaf0ff;
+      --accent: #7aa2ff;
+      --accent-2: #9ff6d2;
+      --ring: rgba(122,162,255,.5);
+    }
+    @media (prefers-color-scheme: light) {
+      :root { --bg:#f7f9ff; --panel:#ffffff; --fg:#0c1222; --muted:#5c678a; --accent:#335dff; --accent-2:#09c39b; --ring: rgba(51,93,255,.25);}  
+    }
+    * { box-sizing: border-box }
+    html, body { height: 100% }
+    body { margin:0; background: radial-gradient(1200px 700px at 80% -10%, rgba(122,162,255,.15), transparent 60%),
+                         radial-gradient(900px 600px at -10% 20%, rgba(159,246,210,.12), transparent 60%), var(--bg);
+           color: var(--fg); font: 16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, sans-serif; }
 
-<div class="card">
-  <h2>Quotidien</h2>
-  <a class="btn" href="/ics/quotidien.ics">Ajouter (Apple/Outlook)</a>
-  <a class="btn" href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=Rappel%20:%20traitement&dates=20250916T080000/20250916T081000&recur=RRULE:FREQ=DAILY">Ajouter (Google Calendar)</a>
-  <p><small>Titre neutre : « Rappel : traitement »</small></p>
-</div>
+    .wrap { max-width: 960px; margin: 0 auto; padding: clamp(16px, 4vw, 40px); }
+    header { display: grid; grid-template-columns: 56px 1fr auto; gap: 16px; align-items: center; margin-bottom: 18px; }
+    .logo { width:56px; height:56px; border-radius:16px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); display:grid; place-items:center; box-shadow: 0 8px 30px rgba(0,0,0,.25); }
+    .logo svg { filter: drop-shadow(0 2px 4px rgba(0,0,0,.25)); }
+    .brand h1 { font-size: clamp(20px,3vw,28px); margin:0; letter-spacing:.2px }
+    .brand p { margin:.2rem 0 0; color: var(--muted) }
 
-<div class="card">
-  <h2>Biquotidien (matin/soir)</h2>
-  <a class="btn" href="/ics/biquotidien.ics">Ajouter (Apple/Outlook)</a>
-  <a class="btn" href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=Rappel%20:%20traitement&details=Rappel%20matin%20et%20soir&recur=RRULE:FREQ=DAILY">Ajouter (Google Calendar)</a>
-  <p><small>Modifiez les heures après ajout.</small></p>
-</div>
+    .card { background: linear-gradient(180deg, color-mix(in oklab, var(--panel) 86%, black 0%), color-mix(in oklab, var(--panel) 100%, black 6%));
+            border: 1px solid color-mix(in oklab, var(--panel), #000 15%);
+            border-radius: 20px; padding: 18px; box-shadow: 0 10px 40px rgba(0,0,0,.28);
+    }
+    .grid { display:grid; gap: 16px; grid-template-columns: 1fr; }
+    @media (min-width: 820px) { .grid { grid-template-columns: repeat(3, 1fr); } }
 
-<div class="card">
-  <h2>Renouvellement mensuel</h2>
-  <a class="btn" href="/ics/renouvellement.ics">Ajouter (Apple/Outlook)</a>
-  <a class="btn" href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=Renouveler%20l%E2%80%99ordonnance&dates=20251016T090000/20251016T091000&recur=RRULE:FREQ=MONTHLY">Ajouter (Google Calendar)</a>
-  <p><small>Alerte la veille (dans le fichier .ics).</small></p>
-</div>
+    .title { display:flex; align-items:center; gap:10px; margin:2px 0 10px }
+    .title .badge { font-size:12px; color: var(--muted); border:1px dashed color-mix(in oklab, var(--muted), #000 30%);
+      padding:.2rem .5rem; border-radius:999px }
 
-<p><small>Démo pédagogique. Ne contient aucune donnée personnelle.</small></p>
+    .btns { display:flex; flex-wrap:wrap; gap:10px; margin-top: 12px }
+    .btn {
+      appearance:none; border:1px solid color-mix(in oklab, var(--fg), #000 70%); background: transparent; color:var(--fg);
+      padding:.75rem 1rem; border-radius:14px; text-decoration:none; font-weight:600; display:inline-flex; align-items:center; gap:.55rem;
+      box-shadow: 0 2px 0 rgba(0,0,0,.12) inset; transition:.2s transform, .2s box-shadow, .2s border-color;
+    }
+    .btn:hover { transform: translateY(-1px); border-color: var(--ring); box-shadow: 0 0 0 6px var(--ring); }
+    .btn.primary { background: linear-gradient(135deg, color-mix(in oklab, var(--accent), white 10%), color-mix(in oklab, var(--accent-2), white 5%)); color:#0c1120; border-color: transparent }
+    .btn.small { padding:.55rem .75rem; font-weight:600; }
+
+    .muted { color: var(--muted); font-size: 13px; }
+    .foot { margin-top: 18px; display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
+
+    .tweak { margin-top:10px; border-top:1px dashed color-mix(in oklab, var(--muted), #000 30%); padding-top:10px }
+    details > summary { cursor:pointer; list-style:none; }
+    details > summary::-webkit-details-marker { display:none }
+    details > summary { color: var(--muted); }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: color-mix(in oklab, var(--panel), #fff 2%);
+      border:1px solid color-mix(in oklab, var(--panel), #000 20%); padding:.1rem .35rem; border-radius:7px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 12a9 9 0 1 1-9-9"/>
+          <path d="M13 3v8h8"/>
+        </svg>
+      </div>
+      <div class="brand">
+        <h1>Ajouter un rappel de traitement</h1>
+        <p class="muted">Titre neutre, aucun identifiant : fonctionne en 1 tap sur iPhone et Android.</p>
+      </div>
+      <div></div>
+    </header>
+
+    <div class="grid" role="list">
+      <!-- Quotidien -->
+      <section class="card" role="listitem">
+        <div class="title">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <h2 style="margin:0">Rappel quotidien</h2>
+          <span class="badge">08:00 (modifiable)</span>
+        </div>
+        <p class="muted">Évènement récurrent tous les jours. Vous pouvez ajuster l'heure après ajout.</p>
+        <div class="btns">
+          <a class="btn primary" id="ics-daily" href="/ics/quotidien.ics">Ajouter (Apple / Outlook)</a>
+          <a class="btn" id="gcal-daily" href="#">Ajouter (Google Calendar)</a>
+        </div>
+        <details class="tweak">
+          <summary>Optionnel : changer l'heure par défaut</summary>
+          <div style="margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+            <label class="muted">Heure <input id="daily-hour" type="time" value="08:00" style="padding:.3rem .4rem; border-radius:8px; border:1px solid color-mix(in oklab, var(--fg), #000 80%); background: transparent; color:var(--fg)"></label>
+            <button class="btn small" id="apply-daily">Mettre à jour les liens</button>
+          </div>
+        </details>
+      </section>
+
+      <!-- Biquotidien -->
+      <section class="card" role="listitem">
+        <div class="title">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <h2 style="margin:0">Rappel biquotidien</h2>
+          <span class="badge">08:00 & 20:00</span>
+        </div>
+        <p class="muted">Deux rappels par jour. Le fichier .ics crée 2 évènements quotidiens (matin/soir).</p>
+        <div class="btns">
+          <a class="btn primary" id="ics-bidaily" href="/ics/biquotidien.ics">Ajouter (Apple / Outlook)</a>
+          <a class="btn" id="gcal-bidaily-am" href="#">Google Calendar • Matin</a>
+          <a class="btn" id="gcal-bidaily-pm" href="#">Google Calendar • Soir</a>
+        </div>
+        <details class="tweak">
+          <summary>Optionnel : changer les heures</summary>
+          <div style="margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+            <label class="muted">Matin <input id="am-hour" type="time" value="08:00" style="padding:.3rem .4rem; border-radius:8px; border:1px solid color-mix(in oklab, var(--fg), #000 80%); background: transparent; color:var(--fg)"></label>
+            <label class="muted">Soir <input id="pm-hour" type="time" value="20:00" style="padding:.3rem .4rem; border-radius:8px; border:1px solid color-mix(in oklab, var(--fg), #000 80%); background: transparent; color:var(--fg)"></label>
+            <button class="btn small" id="apply-bidaily">Mettre à jour</button>
+          </div>
+        </details>
+      </section>
+
+      <!-- Renouvellement -->
+      <section class="card" role="listitem">
+        <div class="title">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9v0"/><polyline points="22 12 18 12 15 15"/></svg>
+          <h2 style="margin:0">Rappel de renouvellement</h2>
+          <span class="badge">Mensuel • alerte veille</span>
+        </div>
+        <p class="muted">Crée un rappel mensuel pour renouveler l’ordonnance (alerte la veille). L’ICS fourni a une date d’exemple ; vous pouvez ensuite modifier la date/heure dans votre agenda.</p>
+        <div class="btns">
+          <a class="btn primary" id="ics-renew" href="/ics/renouvellement.ics">Ajouter (Apple / Outlook)</a>
+          <a class="btn" id="gcal-renew" href="#">Ajouter (Google Calendar)</a>
+        </div>
+        <details class="tweak">
+          <summary>Optionnel : démarrer à +1 mois, 09:00</summary>
+          <div class="muted" style="margin-top:8px">Le lien Google calcule par défaut la première occurrence à +1 mois (heure 09:00). Vous pouvez ajuster ci‑dessous.
+          </div>
+          <div style="margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+            <label class="muted">Heure <input id="renew-hour" type="time" value="09:00" style="padding:.3rem .4rem; border-radius:8px; border:1px solid color-mix(in oklab, var(--fg), #000 80%); background: transparent; color:var(--fg)"></label>
+            <button class="btn small" id="apply-renew">Mettre à jour</button>
+          </div>
+        </details>
+      </section>
+    </div>
+
+    <div class="foot">
+      <p class="muted">🔒 Titre neutre : « Rappel : traitement ». Aucun identifiant, aucune donnée patient.</p>
+      <p class="muted">Besoin d’aide ? Scanner une carte NFC ouvre directement cette page.</p>
+    </div>
+  </div>
+
+  <script>
+    // Utilitaires pour formater les dates au format Google Calendar
+    // Produit un timestamp local type YYYYMMDDTHHMM pour Google Calendar
+    function pad(n){return String(n).padStart(2,'0')}
+    function toLocalStamp(dt){
+      const y = dt.getFullYear();
+      const m = pad(dt.getMonth()+1);
+      const d = pad(dt.getDate());
+      const hh = pad(dt.getHours());
+      const mm = pad(dt.getMinutes());
+      return `${y}${m}${d}T${hh}${mm}`;
+    }
+
+    // Renvoie un Date local à partir d'une HH:MM (aujourd'hui, ou demain si déjà passé)
+    function nextAt(timeStr){
+      const [h,m] = timeStr.split(':').map(Number);
+      const now = new Date();
+      const dt = new Date();
+      dt.setHours(h, m||0, 0, 0);
+      if (dt.getTime() < now.getTime()) dt.setDate(dt.getDate()+1);
+      return dt;
+    }
+
+    function gcalTemplateURL({title, start, end, rrule, details}){
+      const params = new URLSearchParams({ action: 'TEMPLATE', text: title });
+      if (start && end) params.set('dates', `${start}/${end}`);
+      if (rrule) params.set('recur', `RRULE:${rrule}`);
+      if (details) params.set('details', details);
+      return `https://calendar.google.com/calendar/render?${params.toString()}`;
+    }
+
+    // Quotidien (par défaut 08:00 sur 10 min)
+    function updateDaily(){
+      const hhmm = document.getElementById('daily-hour').value || '08:00';
+      const start = nextAt(hhmm);
+      const end = new Date(start.getTime() + 10*60000);
+      const url = gcalTemplateURL({
+        title: 'Rappel : traitement',
+        start: toLocalStamp(start),
+        end: toLocalStamp(end),
+        rrule: 'FREQ=DAILY'
+      });
+      document.getElementById('gcal-daily').href = url;
+    }
+
+    // Biquotidien → 2 liens (matin/soir)
+    function updateBidaily(){
+      const am = document.getElementById('am-hour').value || '08:00';
+      const pm = document.getElementById('pm-hour').value || '20:00';
+      const amStart = nextAt(am), amEnd = new Date(amStart.getTime()+10*60000);
+      const pmStart = nextAt(pm), pmEnd = new Date(pmStart.getTime()+10*60000);
+      document.getElementById('gcal-bidaily-am').href = gcalTemplateURL({
+        title: 'Rappel : traitement',
+        start: toLocalStamp(amStart), end: toLocalStamp(amEnd), rrule: 'FREQ=DAILY',
+        details: 'Rappel matin'
+      });
+      document.getElementById('gcal-bidaily-pm').href = gcalTemplateURL({
+        title: 'Rappel : traitement',
+        start: toLocalStamp(pmStart), end: toLocalStamp(pmEnd), rrule: 'FREQ=DAILY',
+        details: 'Rappel soir'
+      });
+    }
+
+    // Renouvellement → première occurrence = +1 mois à HH:MM (par défaut 09:00)
+    function updateRenew(){
+      const hhmm = document.getElementById('renew-hour').value || '09:00';
+      const [h,m] = hhmm.split(':').map(Number);
+      const now = new Date();
+      const first = new Date(now);
+      first.setMonth(first.getMonth()+1);
+      first.setHours(h, m||0, 0, 0);
+      const end = new Date(first.getTime()+10*60000);
+      document.getElementById('gcal-renew').href = gcalTemplateURL({
+        title: 'Renouveler l’ordonnance',
+        start: toLocalStamp(first), end: toLocalStamp(end), rrule: 'FREQ=MONTHLY',
+        details: 'Alerte la veille (Apple/Outlook via .ics).'
+      });
+    }
+
+    // Init + boutons "appliquer"
+    updateDaily(); updateBidaily(); updateRenew();
+    document.getElementById('apply-daily').addEventListener('click', (e)=>{ e.preventDefault(); updateDaily(); });
+    document.getElementById('apply-bidaily').addEventListener('click', (e)=>{ e.preventDefault(); updateBidaily(); });
+    document.getElementById('apply-renew').addEventListener('click', (e)=>{ e.preventDefault(); updateRenew(); });
+  </script>
+</body>
 </html>
