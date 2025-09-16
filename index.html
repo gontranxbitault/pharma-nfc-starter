@@ -182,9 +182,11 @@
   </div>
 
   <script>
-    // Utilitaires pour formater les dates au format Google Calendar
+    // Utilities
     const pad = n => String(n).padStart(2,'0');
-    const toLocalStamp = dt => `${dt.getFullYear()}${pad(dt.getMonth()+1)}${pad(dt.getDate())}T${pad(dt.getHours())}${pad(dt.getMinutes())}`;
+    // UTC stamp for Google (robust across TZ/DST): YYYYMMDDTHHMMSSZ
+    const toUTCStamp = dt => `${dt.getUTCFullYear()}${pad(dt.getUTCMonth()+1)}${pad(dt.getUTCDate())}T${pad(dt.getUTCHours())}${pad(dt.getUTCMinutes())}${pad(dt.getUTCSeconds())}Z`;
+
     function nextAt(timeStr){
       const [h,m] = (timeStr||'08:00').split(':').map(Number);
       const now = new Date();
@@ -193,47 +195,40 @@
       if (dt.getTime() < now.getTime()) dt.setDate(dt.getDate()+1);
       return dt;
     }
-    function gcalTemplateURL({title, start, end, rrule, details}){
+
+    function gcalTemplateURL({title, start, end, rrule, details, ctz}){
       const params = new URLSearchParams({ action: 'TEMPLATE', text: title });
       if (start && end) params.set('dates', `${start}/${end}`);
       if (rrule) params.set('recur', `RRULE:${rrule}`);
       if (details) params.set('details', details);
+      if (ctz) params.set('ctz', ctz);
       return `https://calendar.google.com/calendar/render?${params.toString()}`;
     }
 
-    // Quotidien (par défaut 08:00 sur 10 min)
+    // Daily (default 08:00, 10 min)
     function updateDaily(){
       const hhmm = document.getElementById('daily-hour').value || '08:00';
-      const start = nextAt(hhmm);
-      const end = new Date(start.getTime() + 10*60000);
-      const url = gcalTemplateURL({
-        title: 'Rappel : traitement',
-        start: toLocalStamp(start),
-        end: toLocalStamp(end),
-        rrule: 'FREQ=DAILY'
-      });
+      const startLocal = nextAt(hhmm);
+      const endLocal = new Date(startLocal.getTime() + 10*60000);
+      const start = toUTCStamp(startLocal);
+      const end   = toUTCStamp(endLocal);
+      const url = gcalTemplateURL({ title: 'Rappel : traitement', start, end, rrule: 'FREQ=DAILY', ctz: 'Europe/Paris' });
       document.getElementById('gcal-daily').href = url;
     }
 
-    // Biquotidien → 2 liens (matin/soir)
+    // Twice daily → 2 buttons (morning/evening)
     function updateBidaily(){
       const am = document.getElementById('am-hour').value || '08:00';
       const pm = document.getElementById('pm-hour').value || '20:00';
-      const amStart = nextAt(am), amEnd = new Date(amStart.getTime()+10*60000);
-      const pmStart = nextAt(pm), pmEnd = new Date(pmStart.getTime()+10*60000);
-      document.getElementById('gcal-bidaily-am').href = gcalTemplateURL({
-        title: 'Rappel : traitement',
-        start: toLocalStamp(amStart), end: toLocalStamp(amEnd), rrule: 'FREQ=DAILY',
-        details: 'Rappel matin'
-      });
-      document.getElementById('gcal-bidaily-pm').href = gcalTemplateURL({
-        title: 'Rappel : traitement',
-        start: toLocalStamp(pmStart), end: toLocalStamp(pmEnd), rrule: 'FREQ=DAILY',
-        details: 'Rappel soir'
-      });
+      const amStartLocal = nextAt(am), amEndLocal = new Date(amStartLocal.getTime()+10*60000);
+      const pmStartLocal = nextAt(pm), pmEndLocal = new Date(pmStartLocal.getTime()+10*60000);
+      const amStart = toUTCStamp(amStartLocal), amEnd = toUTCStamp(amEndLocal);
+      const pmStart = toUTCStamp(pmStartLocal), pmEnd = toUTCStamp(pmEndLocal);
+      document.getElementById('gcal-bidaily-am').href = gcalTemplateURL({ title: 'Rappel : traitement', start: amStart, end: amEnd, rrule: 'FREQ=DAILY', details: 'Rappel matin', ctz: 'Europe/Paris' });
+      document.getElementById('gcal-bidaily-pm').href = gcalTemplateURL({ title: 'Rappel : traitement', start: pmStart, end: pmEnd, rrule: 'FREQ=DAILY', details: 'Rappel soir', ctz: 'Europe/Paris' });
     }
 
-    // Renouvellement → première occurrence = +1 mois à HH:MM (par défaut 09:00)
+    // Renewal → first occurrence = +1 month at HH:MM (default 09:00)
     function updateRenew(){
       const hhmm = document.getElementById('renew-hour').value || '09:00';
       const [h,m] = hhmm.split(':').map(Number);
@@ -241,12 +236,10 @@
       const first = new Date(now);
       first.setMonth(first.getMonth()+1);
       first.setHours(h, m||0, 0, 0);
-      const end = new Date(first.getTime()+10*60000);
-      document.getElementById('gcal-renew').href = gcalTemplateURL({
-        title: 'Renouveler l’ordonnance',
-        start: toLocalStamp(first), end: toLocalStamp(end), rrule: 'FREQ=MONTHLY',
-        details: 'Alerte la veille (Apple/Outlook via .ics).'
-      });
+      const endLocal = new Date(first.getTime()+10*60000);
+      const start = toUTCStamp(first);
+      const end   = toUTCStamp(endLocal);
+      document.getElementById('gcal-renew').href = gcalTemplateURL({ title: 'Renouveler l’ordonnance', start, end, rrule: 'FREQ=MONTHLY', details: 'Alerte la veille (Apple/Outlook via .ics).', ctz: 'Europe/Paris' });
     }
 
     // Init + actions
